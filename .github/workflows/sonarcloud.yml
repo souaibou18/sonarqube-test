@@ -39,13 +39,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      - name: Get Quality Gate status
-        id: qg
+      - name: Quality Gate Check
         uses: sonarsource/sonarqube-quality-gate-action@v1
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectKey: "souaibou18_sonarqube-test"
-          token: ${{ secrets.SONAR_TOKEN }}
-          fail-on-error: false    
+          scanMetadataReportFile: .scannerwork/report-task.txt   
           
       - name: Comment PR with SonarCloud summary
         uses: peter-evans/create-or-update-comment@v5
