@@ -27,7 +27,34 @@ jobs:
           key: ${{ runner.os }}-sonar
           restore-keys: ${{ runner.os }}-sonar
 
+      - name: Get modified files
+        id: gitdiff
+        run: |
+          FILES=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep '\.java$' | tr '\n' ',')
+          echo "Modified files: $FILES"
+          echo "files=$FILES" >> $GITHUB_OUTPUT    
+
       - name: Run SonarCloud scan
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Get Quality Gate status
+        id: qg
+        uses: sonarsource/sonarqube-quality-gate-action@v1
+        with:
+          projectKey: "souaibou18_sonarqube-test"
+          token: ${{ secrets.SONAR_TOKEN }}
+          fail-on-error: false    
+          
+      - name: Comment PR with SonarCloud summary
+        uses: peter-evans/create-or-update-comment@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          issue-number: ${{ github.event.pull_request.number }}
+          body: |
+            ### :bar_chart: SonarCloud Analysis Summary
+            - **Quality Gate:** ${{ steps.qg.outputs.qualityGateStatus }}
+            - **Branch:** ${{ github.head_ref }}
+            - **Project Key:** souaibou18_sonarqube-test
+            - Check details: [SonarCloud project](https://sonarcloud.io/project/issues?id=souaibou18_sonarqube-test&pullRequest=${{ github.event.pull_request.number }})
